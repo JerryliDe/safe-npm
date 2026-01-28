@@ -11,7 +11,11 @@
     "start": "node dist/index.js",
     "build": "tsc",
     "dev": "tsc -w",
-    "test": "vitest"
+    "test": "vitest",
+    "prepublishOnly": "npm run build && npm run test",
+    "patch": "npm version patch && npm publish",
+    "minor": "npm version minor && npm publish",
+    "major": "npm version major && npm publish"
   },
   "keywords": [
     "npm",

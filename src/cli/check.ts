@@ -8,6 +8,7 @@ import { runNpm } from '../utils/npm-runner.js';
 export interface CheckOptions {
   isForce?: boolean;
   install?: boolean;
+  isGlobal?: boolean;
 }
 
 async function promptInstallCorrect(correctPackage: string): Promise<boolean> {
@@ -135,7 +136,13 @@ export async function checkPackages(
          const shouldInstall = await promptInstallCorrect(result.suggestedPackage);
          if (shouldInstall) {
              console.log(chalk.green(`\n${t('installingCorrect')}: ${result.suggestedPackage}...`));
-             await runNpm(['install', result.suggestedPackage]);
+
+             const installArgs = ['install', result.suggestedPackage];
+             if (options.isGlobal) {
+                 installArgs.push('-g');
+             }
+
+             await runNpm(installArgs);
              // Return false to stop the original (malicious) installation logic
              // But we essentially succeeded in the user's intent.
              // However, to keep flow clean, we exit the process here or return false to block original.

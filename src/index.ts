@@ -72,6 +72,7 @@ async function main(): Promise<void> {
     const safe = await checkPackages(parsed.packages, {
       isForce: parsed.isForce,
       install: true,
+      isGlobal: parsed.isGlobal,
     });
 
     if (!safe) {
