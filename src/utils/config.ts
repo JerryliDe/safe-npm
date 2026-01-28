@@ -46,7 +46,7 @@ export function getConfig(): Config {
     try {
       const content = readFileSync(configPath, 'utf-8');
       cachedConfig = { ...defaultConfig, ...JSON.parse(content) };
-      return cachedConfig;
+      return cachedConfig as Config;
     } catch {
       cachedConfig = defaultConfig;
       return cachedConfig;
