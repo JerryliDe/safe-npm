@@ -1,5 +1,5 @@
-// Stub - will be implemented in Task 4
+import { runNpmPassthrough } from '../utils/npm-runner.js';
+
 export async function proxyToNpm(args: string[]): Promise<number> {
-  console.log('Proxy mode - passing to npm:', args.join(' '));
-  return 0;
+  return runNpmPassthrough(args);
 }
