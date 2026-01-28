@@ -24,4 +24,14 @@ describe('typosquatting scanner', () => {
     const result = await scanTyposquatting('my-totally-unique-package');
     expect(result).toHaveLength(0);
   });
+
+  it('should detect scope hijacking and provide correct suggestion', async () => {
+    // codex mimics @openai/codex
+    const result = await scanTyposquatting('codex');
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe('typosquat');
+    expect(result[0].suggestion).toBe('@openai/codex');
+    expect(result[0].details).toContain('Scope Hijacking Detected');
+  });
 });
+

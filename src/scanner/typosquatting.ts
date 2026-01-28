@@ -109,6 +109,7 @@ export async function scanTyposquatting(packageName: string): Promise<ScanIssue[
         severity: 'fatal',
         message: t('typosquatDetected'),
         details: `Similar to popular package "${popular}" (distance: ${distance})`,
+        suggestion: popular,
       });
       break;
     }
@@ -119,6 +120,7 @@ export async function scanTyposquatting(packageName: string): Promise<ScanIssue[
         severity: 'fatal',
         message: t('typosquatDetected'),
         details: `Suspicious similarity to "${popular}"`,
+        suggestion: popular,
       });
       break;
     }
@@ -141,6 +143,7 @@ export async function scanTyposquatting(packageName: string): Promise<ScanIssue[
                     severity: 'fatal',
                     message: t('typosquatDetected'),
                     details: `Scope Hijacking Detected: This package "${packageName}" mimics the official package "${popular}". Verify the scope carefully!`,
+                    suggestion: popular,
                 });
                 break;
             }

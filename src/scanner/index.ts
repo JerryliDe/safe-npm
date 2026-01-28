@@ -152,8 +152,12 @@ export async function scanPackage(
       riskLevel = 'fatal';
       canBypass = false;
 
-      // Try to extract suggestion from typosquat details
-      if (issue.type === 'typosquat' && issue.details?.includes('"')) {
+      // Use explicit suggestion if available
+      if (issue.suggestion) {
+          suggestedPackage = issue.suggestion;
+      }
+      // Fallback: Try to extract from details (legacy/fallback)
+      else if (issue.type === 'typosquat' && issue.details?.includes('"')) {
           const match = issue.details.match(/"([^"]+)"/);
           if (match) suggestedPackage = match[1];
       }

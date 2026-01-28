@@ -21,6 +21,7 @@ export interface ScanIssue {
   severity: RiskLevel;
   message: string;
   details?: string;
+  suggestion?: string;
 }
 
 export interface ScanOptions {
