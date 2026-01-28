@@ -8,11 +8,16 @@ export interface NpmResult {
 
 export function runNpm(args: string[]): Promise<NpmResult> {
   return new Promise((resolve) => {
-    const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    const isWin = process.platform === 'win32';
+    const command = isWin ? 'cmd.exe' : 'npm';
+    // On Windows, use /d /s /c to run the command safely
+    // npm.cmd is usually in PATH, but we can specify it directly if needed.
+    // Usually 'npm' works inside cmd.
+    const finalArgs = isWin ? ['/d', '/s', '/c', 'npm', ...args] : args;
 
-    const child = spawn(npmCmd, args, {
+    const child = spawn(command, finalArgs, {
       stdio: ['inherit', 'pipe', 'pipe'],
-      shell: process.platform === 'win32',
+      shell: false,
     });
 
     let stdout = '';
@@ -48,11 +53,13 @@ export function runNpm(args: string[]): Promise<NpmResult> {
 
 export function runNpmPassthrough(args: string[]): Promise<number> {
   return new Promise((resolve) => {
-    const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    const isWin = process.platform === 'win32';
+    const command = isWin ? 'cmd.exe' : 'npm';
+    const finalArgs = isWin ? ['/d', '/s', '/c', 'npm', ...args] : args;
 
-    const child = spawn(npmCmd, args, {
+    const child = spawn(command, finalArgs, {
       stdio: 'inherit',
-      shell: process.platform === 'win32',
+      shell: false,
     });
 
     child.on('close', (code) => {

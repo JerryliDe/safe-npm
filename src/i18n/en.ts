@@ -45,6 +45,15 @@ export const en = {
   tuiSettings: 'Settings',
   tuiQuit: 'Quit',
   tuiLanguage: 'Language',
+
+  // Suggestions
+  suggestionTitle: '💡 Suggestion: Did you mean to install the official package',
+  suggestionPrompt: 'Do you want to install',
+  installingCorrect: '🚀 Installing correct package',
+  packageNotFound: 'Package not found in registry',
+  didYouMean: 'Did you mean',
+  checkName: 'Please check the package name',
+  registryCheckFail: 'Package does not exist',
 };
 
 export type I18nKey = keyof typeof en;

@@ -3,6 +3,7 @@ import { t } from '../i18n/index.js';
 import { getConfig } from '../utils/config.js';
 import { getPackageInfo, downloadPackageAndHash } from '../utils/npm-package.js';
 import axios from 'axios';
+import FormData from 'form-data';
 
 // Local blacklist cache for offline mode
 // Source: Known malicious npm packages from security advisories
@@ -80,6 +81,64 @@ interface VirusTotalResponse {
 }
 
 /**
+ * Get a special upload URL for files larger than 32MB
+ */
+async function getLargeFileUploadUrl(apiKey: string): Promise<string | null> {
+    try {
+        const response = await axios.get<{ data: string }>('https://www.virustotal.com/api/v3/files/upload_url', {
+             headers: { 'x-apikey': apiKey },
+             timeout: 30000,
+        });
+        return response.data?.data || null;
+    } catch (e) {
+        console.error('Failed to get VT upload URL', e);
+        return null;
+    }
+}
+
+/**
+ * Upload file to VirusTotal for analysis
+ */
+async function uploadFileToVirusTotal(buffer: Buffer, filename: string, apiKey: string): Promise<string | null> {
+    try {
+        const formData = new FormData();
+        formData.append('file', buffer, { filename });
+
+        let uploadUrl = 'https://www.virustotal.com/api/v3/files';
+
+        // VirusTotal requires a special upload URL for files > 32MB
+        // Using 32MB limit to be safe (API doc says 32MB)
+        if (buffer.length > 32 * 1024 * 1024) {
+             const customUrl = await getLargeFileUploadUrl(apiKey);
+             if (customUrl) {
+                 uploadUrl = customUrl;
+             }
+        }
+
+        const response = await axios.post(uploadUrl, formData, {
+            headers: {
+                'x-apikey': apiKey,
+                ...formData.getHeaders(),
+            },
+            // Increase timeout significantly for uploads (10 minutes)
+            timeout: 600000,
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity
+        });
+
+        // Returns the analysis ID (e.g., "ZmY5...")
+        return response.data?.data?.id || null;
+    } catch (error: any) {
+        if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+            console.error('VirusTotal Upload Timeout: File too large or network too slow');
+        } else {
+            console.error('VirusTotal Upload Error:', error?.message || error);
+        }
+        return null;
+    }
+}
+
+/**
  * Query VirusTotal API for file hash
  */
 async function queryVirusTotal(sha256: string, apiKey: string): Promise<{ malicious: number; suspicious: number; detections: string[] } | null> {
@@ -128,10 +187,15 @@ async function queryVirusTotal(sha256: string, apiKey: string): Promise<{ malici
   }
 }
 
+interface VTScanResult {
+  issues: ScanIssue[];
+  info?: string;
+}
+
 export async function scanVirusTotal(
   packageName: string,
   options: ScanOptions = {}
-): Promise<ScanIssue[]> {
+): Promise<VTScanResult> {
   const issues: ScanIssue[] = [];
   const config = getConfig();
 
@@ -154,7 +218,7 @@ export async function scanVirusTotal(
       message: t('virusDetected'),
       details: `Package "${baseName}" is in the known malicious packages blacklist`,
     });
-    return issues;
+    return { issues, info: 'Blocked by local blacklist' };
   }
 
   // Get package info to check version
@@ -170,18 +234,18 @@ export async function scanVirusTotal(
         message: t('virusDetected'),
         details: `Version ${packageInfo.version} of "${packageInfo.name}" is known to be compromised`,
       });
-      return issues;
+      return { issues, info: 'Blocked by malicious version list' };
     }
   }
 
   // If offline mode or no API key, skip online check
   if (options.offline || config.offline) {
-    return issues;
+    return { issues, info: 'Skipped (Offline Mode)' };
   }
 
   if (!config.virustotal.apiKey || !config.virustotal.enabled) {
     // No API key configured, skip VT check but don't warn
-    return issues;
+    return { issues, info: 'Skipped (No API Key)' };
   }
 
   // Download package and calculate hash
@@ -191,23 +255,44 @@ export async function scanVirusTotal(
     if (downloadResult) {
       const vtResult = await queryVirusTotal(downloadResult.hash, config.virustotal.apiKey);
 
-      if (vtResult && vtResult.malicious > 0) {
-        issues.push({
-          type: 'virus',
-          severity: 'fatal',
-          message: t('virusDetected'),
-          details: `VirusTotal: ${vtResult.malicious} security vendors flagged this package as malicious. Detections: ${vtResult.detections.slice(0, 3).join(', ')}${vtResult.detections.length > 3 ? '...' : ''}`,
-        });
-      } else if (vtResult && vtResult.suspicious > 2) {
-        issues.push({
-          type: 'virus',
-          severity: 'high',
-          message: t('virusDetected'),
-          details: `VirusTotal: ${vtResult.suspicious} security vendors flagged this package as suspicious`,
-        });
+      if (vtResult) {
+          const totalEngines = (vtResult.malicious || 0) + (vtResult.suspicious || 0) + 70; // Estimate
+          const info = `Scanned Hash: ${downloadResult.hash.substring(0, 8)}... | Detections: ${vtResult.malicious}/${totalEngines}`;
+
+          if (vtResult.malicious > 0) {
+            issues.push({
+              type: 'virus',
+              severity: 'fatal',
+              message: t('virusDetected'),
+              details: `VirusTotal: ${vtResult.malicious} security vendors flagged this package as malicious. Detections: ${vtResult.detections.slice(0, 3).join(', ')}${vtResult.detections.length > 3 ? '...' : ''}`,
+            });
+          } else if (vtResult.suspicious > 2) {
+            issues.push({
+              type: 'virus',
+              severity: 'high',
+              message: t('virusDetected'),
+              details: `VirusTotal: ${vtResult.suspicious} security vendors flagged this package as suspicious`,
+            });
+          }
+          return { issues, info };
+      } else {
+          // File not found in VT, upload it
+          const analysisId = await uploadFileToVirusTotal(downloadResult.buffer, `${packageInfo.name}-${packageInfo.version}.tgz`, config.virustotal.apiKey);
+
+          if (analysisId) {
+             return {
+                 issues,
+                 info: `File not found in VT. Uploaded for analysis. View: https://www.virustotal.com/gui/file-analysis/${analysisId}`
+             };
+          } else {
+             return {
+                 issues,
+                 info: `Hash ${downloadResult.hash.substring(0, 8)}... not found in VirusTotal (Upload failed)`
+             };
+          }
       }
     }
   }
 
-  return issues;
+  return { issues, info: 'Could not download package for scanning' };
 }

@@ -63,10 +63,29 @@ export async function getPackageInfo(packageName: string): Promise<PackageInfo |
       main: info.main,
       dependencies: info.dependencies || {},
     };
-  } catch (error) {
-    console.error(`Failed to get package info for ${packageName}:`, error);
+  } catch (error: any) {
+    if (error.stdout && error.stdout.includes('E404')) {
+        return null; // Clearly not found
+    }
+    // For other errors, we also return null currently but log it
+    // Suppress logging if it's just a 404 (npm view output usually contains the error)
+    if (!error.message.includes('code E404')) {
+        console.error(`Failed to get package info for ${packageName}:`, error.message);
+    }
     return null;
   }
+}
+
+/**
+ * Check if a package exists in the registry
+ */
+export async function checkPackageExists(packageName: string): Promise<boolean> {
+    try {
+        await execAsync(`npm view ${packageName} name`, { timeout: 10000 });
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 /**

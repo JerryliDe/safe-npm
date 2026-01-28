@@ -5,7 +5,15 @@ export interface ScanResult {
   version?: string;
   riskLevel: RiskLevel;
   issues: ScanIssue[];
+  checks: ScanCheck[];
   canBypass: boolean;
+  suggestedPackage?: string;
+}
+
+export interface ScanCheck {
+  name: string;
+  status: 'pass' | 'fail' | 'skipped' | 'error';
+  description?: string;
 }
 
 export interface ScanIssue {
@@ -19,3 +27,5 @@ export interface ScanOptions {
   offline?: boolean;
   skipVirustotal?: boolean;
 }
+
+export type ProgressCallback = (message: string, completed: number, total: number) => void;

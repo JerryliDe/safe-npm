@@ -47,4 +47,13 @@ export const zh: Record<I18nKey, string> = {
   tuiSettings: '设置',
   tuiQuit: '退出',
   tuiLanguage: '语言',
+
+  // Suggestions
+  suggestionTitle: '💡 建议：您是否想安装官方正版包',
+  suggestionPrompt: '您是否要安装',
+  installingCorrect: '🚀 正在安装正确的包',
+  packageNotFound: '在注册表中未找到此包',
+  didYouMean: '您是指',
+  checkName: '请检查包名',
+  registryCheckFail: '包不存在',
 };

@@ -1,16 +1,17 @@
 {
-  "name": "safe-npm",
+  "name": "@deepv-code/safe-npm",
   "version": "0.1.0",
   "description": "A security-focused npm wrapper that scans packages before installation",
   "main": "dist/index.js",
+  "type": "module",
   "bin": {
     "safe-npm": "dist/index.js"
   },
   "scripts": {
+    "start": "node dist/index.js",
     "build": "tsc",
     "dev": "tsc -w",
-    "test": "vitest",
-    "start": "node dist/index.js"
+    "test": "vitest"
   },
   "keywords": [
     "npm",
@@ -18,18 +19,27 @@
     "malware",
     "scanner"
   ],
-  "author": "",
+  "author": "DeepV Code",
   "license": "MIT",
-  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "axios": "^1.13.4",
     "chalk": "^5.6.2",
     "commander": "^14.0.2",
+    "form-data": "^4.0.5",
     "ink": "^6.6.0",
+    "ink-text-input": "^6.0.0",
     "ora": "^9.1.0",
     "react": "^19.2.4"
   },
   "devDependencies": {
+    "@types/form-data": "^2.2.1",
+    "@types/ink-text-input": "^2.0.5",
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.10",
     "typescript": "^5.9.3",

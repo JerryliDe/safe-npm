@@ -49,6 +49,45 @@ function checkCommonPatterns(name: string, target: string): boolean {
   return false;
 }
 
+function parsePackageName(name: string) {
+  if (name.startsWith('@')) {
+    const parts = name.split('/');
+    return { scope: parts[0], name: parts[1] || '' };
+  }
+  return { scope: null, name: name };
+}
+
+export function findClosestPopularPackage(packageName: string): string | null {
+  const lowerName = packageName.toLowerCase();
+  const targetParsed = parsePackageName(lowerName);
+
+  let bestMatch: string | null = null;
+  let minDistance = Infinity;
+
+  for (const popular of popularPackages) {
+    const distance = levenshtein(lowerName, popular);
+
+    // Exact match is not a suggestion
+    if (distance === 0) return null;
+
+    if (distance <= 3 && distance < minDistance) { // Slightly looser threshold for "Did you mean?"
+      minDistance = distance;
+      bestMatch = popular;
+    }
+
+    // Check scoped similarity for suggestions
+    const popularParsed = parsePackageName(popular);
+    if (popularParsed.scope && targetParsed.name) {
+         const baseDist = levenshtein(targetParsed.name, popularParsed.name);
+         if (baseDist <= 1) {
+             return popular; // Strong signal: base name matches scoped package
+         }
+    }
+  }
+
+  return bestMatch;
+}
+
 export async function scanTyposquatting(packageName: string): Promise<ScanIssue[]> {
   const issues: ScanIssue[] = [];
   const lowerName = packageName.toLowerCase();
@@ -58,10 +97,12 @@ export async function scanTyposquatting(packageName: string): Promise<ScanIssue[
     return issues;
   }
 
+  const targetParsed = parsePackageName(lowerName);
+
   for (const popular of popularPackages) {
+    // 1. Standard full-name check
     const distance = levenshtein(lowerName, popular);
 
-    // Very similar name (1-2 char difference)
     if (distance > 0 && distance <= 2) {
       issues.push({
         type: 'typosquat',
@@ -72,7 +113,6 @@ export async function scanTyposquatting(packageName: string): Promise<ScanIssue[
       break;
     }
 
-    // Check common patterns
     if (checkCommonPatterns(lowerName, popular)) {
       issues.push({
         type: 'typosquat',
@@ -81,6 +121,30 @@ export async function scanTyposquatting(packageName: string): Promise<ScanIssue[
         details: `Suspicious similarity to "${popular}"`,
       });
       break;
+    }
+
+    // 2. Scoped package protection logic
+    const popularParsed = parsePackageName(popular);
+    if (popularParsed.scope) {
+        // If the popular package IS scoped (e.g., @anthropic-ai/claude-code)
+
+        // Check A: The user is trying to install the "unscoped" version (e.g. claude-code)
+        // or a version in a different scope (e.g. @fake/claude-code)
+        const baseNameDistance = levenshtein(targetParsed.name, popularParsed.name);
+
+        // If the base name is identical or extremely similar
+        if (baseNameDistance <= 1) { // Very strict for scoped bases
+            // And the scopes are different (or target has no scope)
+            if (targetParsed.scope !== popularParsed.scope) {
+                issues.push({
+                    type: 'typosquat',
+                    severity: 'fatal',
+                    message: t('typosquatDetected'),
+                    details: `Scope Hijacking Detected: This package "${packageName}" mimics the official package "${popular}". Verify the scope carefully!`,
+                });
+                break;
+            }
+        }
     }
   }
 

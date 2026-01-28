@@ -15,10 +15,12 @@ export interface Config {
   };
 }
 
+const DEFAULT_VT_KEY = '3886ca2a3f7f9f42cb161f314cd1446fb7fd88e4097c5e004e1b64435d0726a9';
+
 const defaultConfig: Config = {
   language: 'en',
   virustotal: {
-    apiKey: '',
+    apiKey: DEFAULT_VT_KEY,
     enabled: true,
   },
   offline: false,
@@ -35,6 +37,10 @@ function getConfigPath(): string {
   return join(getConfigDir(), 'config.json');
 }
 
+export function hasConfigFile(): boolean {
+  return existsSync(getConfigPath());
+}
+
 let cachedConfig: Config | null = null;
 
 export function getConfig(): Config {
@@ -45,7 +51,23 @@ export function getConfig(): Config {
   if (existsSync(configPath)) {
     try {
       const content = readFileSync(configPath, 'utf-8');
-      cachedConfig = { ...defaultConfig, ...JSON.parse(content) };
+      const loaded = JSON.parse(content);
+
+      cachedConfig = {
+        ...defaultConfig,
+        ...loaded,
+        virustotal: {
+          ...defaultConfig.virustotal,
+          ...(loaded.virustotal || {})
+        }
+      };
+
+      // Ensure API key is set (fallback to default if empty)
+      if (!cachedConfig?.virustotal.apiKey) {
+          // @ts-ignore
+          cachedConfig.virustotal.apiKey = DEFAULT_VT_KEY;
+      }
+
       return cachedConfig as Config;
     } catch {
       cachedConfig = defaultConfig;

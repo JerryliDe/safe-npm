@@ -4,9 +4,43 @@ import { parseArgs } from './cli/args-parser.js';
 import { proxyToNpm } from './cli/proxy.js';
 import { checkPackages } from './cli/check.js';
 import { startTui } from './tui/index.js';
+import { hasConfigFile, saveConfig } from './utils/config.js';
+import * as readline from 'readline';
+
+async function promptLanguage(): Promise<void> {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    console.log('\nWelcome to safe-npm! / 欢迎使用 safe-npm!');
+    console.log('Please select your language / 请选择语言:');
+    console.log('1. English');
+    console.log('2. 中文 (Chinese)');
+
+    rl.question('Select [1/2] (default: 2): ', (answer) => {
+      if (answer.trim() === '1') {
+        saveConfig({ language: 'en' });
+        console.log('Language set to English.\n');
+      } else {
+        // Default to Chinese as per request context or generic 'other'
+        saveConfig({ language: 'zh' });
+        console.log('语言已设置为中文。\n');
+      }
+      rl.close();
+      resolve();
+    });
+  });
+}
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+
+  // First run check
+  if (!hasConfigFile()) {
+    await promptLanguage();
+  }
 
   if (args.length === 0) {
     // Show help or start TUI

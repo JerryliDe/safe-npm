@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput, useApp } from 'ink';
 import { t } from '../i18n/index.js';
+import { PopularScreen } from './screens/PopularScreen.js';
+import { CheckScreen } from './screens/CheckScreen.js';
+import { SettingsScreen } from './screens/SettingsScreen.js';
 
 type Screen = 'menu' | 'popular' | 'check' | 'settings';
 
 export function App(): React.ReactElement {
   const [screen, setScreen] = useState<Screen>('menu');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [checkPackage, setCheckPackage] = useState<string | undefined>(undefined);
   const { exit } = useApp();
 
   const menuItems = [
@@ -29,16 +33,12 @@ export function App(): React.ReactElement {
         if (item.key === 'quit') {
           exit();
         } else {
+          setCheckPackage(undefined); // Reset check package when entering normally
           setScreen(item.key as Screen);
         }
       }
-    }
-
-    if (input === 'q') {
-      if (screen === 'menu') {
+      if (input === 'q') {
         exit();
-      } else {
-        setScreen('menu');
       }
     }
   });
@@ -59,12 +59,38 @@ export function App(): React.ReactElement {
     );
   }
 
-  return (
-    <Box flexDirection="column" padding={1}>
-      <Text bold color="cyan">{screen.toUpperCase()}</Text>
-      <Text> </Text>
-      <Text>Coming soon...</Text>
-      <Text dimColor>Press q to go back</Text>
-    </Box>
-  );
+  if (screen === 'popular') {
+    return (
+      <Box padding={1}>
+        <PopularScreen
+          onSelect={(pkg) => {
+            setCheckPackage(pkg);
+            setScreen('check');
+          }}
+          onBack={() => setScreen('menu')}
+        />
+      </Box>
+    );
+  }
+
+  if (screen === 'check') {
+    return (
+      <Box padding={1}>
+        <CheckScreen
+          initialPackage={checkPackage}
+          onBack={() => setScreen('menu')}
+        />
+      </Box>
+    );
+  }
+
+  if (screen === 'settings') {
+    return (
+      <Box padding={1}>
+        <SettingsScreen onBack={() => setScreen('menu')} />
+      </Box>
+    );
+  }
+
+  return <Text>Error: Unknown screen</Text>;
 }
