@@ -10,11 +10,14 @@ export const en = {
   riskSafe: 'SAFE',
 
   // Detection messages
-  virusDetected: 'Known malware detected via VirusTotal',
+  virusDetected: 'Known malware detected',
   typosquatDetected: 'Typosquatting detected - this may be a fake package',
   suspiciousCode: 'Suspicious code pattern detected',
   cveFound: 'Known vulnerability found',
   minerDetected: 'Crypto-miner pattern detected',
+  obfuscatedCode: 'Obfuscated code detected - may hide malicious behavior',
+  dangerousScript: 'Dangerous install script detected',
+  blacklisted: 'Package is in known malicious packages list',
 
   // Actions
   blocked: 'Installation blocked',
@@ -25,10 +28,15 @@ export const en = {
   // Scanner
   scanning: 'Scanning package',
   scanComplete: 'Scan complete',
+  downloadingPackage: 'Downloading package for analysis',
+  analyzingCode: 'Analyzing code patterns',
+  checkingVirustotal: 'Checking VirusTotal database',
+  checkingBlacklist: 'Checking against known malicious packages',
 
   // Errors
   networkError: 'Network error - falling back to local cache',
   offlineMode: 'Running in offline mode',
+  vtNoApiKey: 'VirusTotal API key not configured - skipping online scan',
 
   // TUI
   tuiWelcome: 'Welcome to safe-npm',

@@ -12,11 +12,14 @@ export const zh: Record<I18nKey, string> = {
   riskSafe: '安全',
 
   // Detection messages
-  virusDetected: '通过 VirusTotal 检测到已知恶意软件',
+  virusDetected: '检测到已知恶意软件',
   typosquatDetected: '检测到仿冒包 - 这可能是假冒包',
   suspiciousCode: '检测到可疑代码模式',
   cveFound: '发现已知漏洞',
   minerDetected: '检测到挖矿脚本特征',
+  obfuscatedCode: '检测到代码混淆 - 可能隐藏恶意行为',
+  dangerousScript: '检测到危险的安装脚本',
+  blacklisted: '此包在已知恶意包名单中',
 
   // Actions
   blocked: '已阻止安装',
@@ -27,10 +30,15 @@ export const zh: Record<I18nKey, string> = {
   // Scanner
   scanning: '正在扫描包',
   scanComplete: '扫描完成',
+  downloadingPackage: '正在下载包进行分析',
+  analyzingCode: '正在分析代码模式',
+  checkingVirustotal: '正在检查 VirusTotal 数据库',
+  checkingBlacklist: '正在检查已知恶意包名单',
 
   // Errors
   networkError: '网络错误 - 回退到本地缓存',
   offlineMode: '离线模式运行中',
+  vtNoApiKey: '未配置 VirusTotal API 密钥 - 跳过在线扫描',
 
   // TUI
   tuiWelcome: '欢迎使用 safe-npm',
