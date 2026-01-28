@@ -1,6 +1,6 @@
 {
   "name": "@deepv-code/safe-npm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A security-focused npm wrapper that scans packages before installation",
   "main": "dist/index.js",
   "type": "module",
