@@ -3,6 +3,7 @@
 import { parseArgs } from './cli/args-parser.js';
 import { proxyToNpm } from './cli/proxy.js';
 import { checkPackages } from './cli/check.js';
+import { startTui } from './tui/index.js';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -22,9 +23,9 @@ async function main(): Promise<void> {
   const parsed = parseArgs(args);
 
   if (parsed.isTui) {
-    // TUI mode - will implement later
-    console.log('TUI mode coming soon...');
-    process.exit(0);
+    startTui();
+    // Don't exit - Ink handles the process
+    return;
   }
 
   if (parsed.isCheck) {
